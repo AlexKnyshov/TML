@@ -26,7 +26,6 @@ optional.add_argument('--Nepochs', metavar='N', help='number of epochs for DNN t
 optional.add_argument('--no-norm', dest='unnormalize', action='store_true', help='do not normalize features', default=False)
 optional.add_argument('--Ksplits', metavar='N', help='number of cross-validation splits',dest="ksplits", type=int, default=10)
 
-
 if len(sys.argv) == 1:
 	parser.print_help()
 	sys.exit()
@@ -47,7 +46,7 @@ else:
 	batch_size = vars(args)["batch_size"]
 	nb_DNN_deep_layers = vars(args)["nb_DNN_deep_layers"]
 	nb_DNN_neurons = vars(args)["nb_DNN_neurons"]
-	unnormalize = vars(args)["unnormalize"]
+	normalize = not vars(args)["unnormalize"]
 	ksplits = vars(args)["ksplits"]
 
 	blocks = set(vars(args)["blocks"].split(","))
@@ -99,6 +98,7 @@ def mkdirfunc(dir1):
 
 #### GET FEATURES ####
 if 'F' in procedure:
+	print ("####### feature extraction stage #######")
 
 	model = VGG16(weights='imagenet', include_top=False)
 
@@ -168,42 +168,48 @@ if 'F' in procedure:
 ############# TRAINING PART ###############
 
 if "T" in procedure:
+	print ("####### training stage #######")
+
 	from sklearn.metrics import accuracy_score
 	from sklearn.model_selection import StratifiedKFold
 	mkdirfunc(model_dest)
 	output_file = open(model_dest+"/evaluation_scores.csv", "w")
 	output_dict = []
 
+	labels_set = set()
+	with open(feature_dest+"/classes.txt") as classes_handle:
+		for line in classes_handle:
+			line = line.strip().split()
+			labels_set.add(line[0])
+
+	if len(blocks) > 1:
+		savedX = []
+		for b in blocks:
+			savedX.append(np.load(feature_dest+"/X-c"+b+".npy"))
+		X = np.concatenate(savedX, 1)
+
+	else:
+		X = np.load(feature_dest+"/X-c"+next(iter(blocks))+".npy")
+
+	Y = np.load(feature_dest +"/Y.npy")
+	
+	if normalize:
+		X = np.sqrt(np.abs(X)) * np.sign(X)
+
 	if algorithm == "SVM":
 
 		from sklearn.svm import SVC, LinearSVC
 
-		if len(blocks) > 1:
-			savedX = []
-			for b in blocks:
-				savedX.append(np.load(feature_dest+"/X-c"+b+".npy"))
-			X = np.concatenate(savedX, 1)
-
-		else:
-			X = np.load(feature_dest+"/X-c"+next(iter(blocks))+".npy")
-
-		Y = np.load(feature_dest +"/Y.npy")
-		
-		if unnormalize:
-			X = np.sqrt(np.abs(X)) * np.sign(X)
-
 		best_model = None
 		best_score = None
 		kfold = StratifiedKFold(n_splits=ksplits, shuffle=True, random_state=555)
-		cvscores, splits = [],[]
 		trial = 0
 		for train, test in kfold.split(X, Y):
 			clf = LinearSVC(C=1.0, loss='squared_hinge', penalty='l2',multi_class='ovr', max_iter=10000)
 			clf.fit(X[train], Y[train])
 			y_pred = clf.predict(X[test])
 			acc = accuracy_score(Y[test],y_pred)
-			cvscores.append(acc)
-			splits.append((Y[test], y_pred))
+			output_dict.append(acc)
 			if trial == 0:
 				best_model = clf
 				best_score = acc
@@ -212,38 +218,23 @@ if "T" in procedure:
 					best_model = clf
 					best_score = acc
 			trial += 1
-		output_dict.append(cvscores)
-		print (best_score)
+		
+		print ("best iteration accuracy:", best_score)
+		print ("average accuracy:", sum(output_dict)/len(output_dict))
 
 		pickle.dump(best_model, open(model_dest+"/SVMmodel.bin", 'wb'))
 	
 	elif algorithm == "DNN":
-		labels_set = set()
-		with open(feature_dest+"/classes.txt") as classes_handle:
-			for line in classes_handle:
-				line = line.strip().split()
-				labels_set.add(line[0])
-		if len(blocks) > 1:
-			savedX = []
-			for b in blocks:
-				savedX.append(np.load(feature_dest+"/X-c"+b+".npy"))
-			X = np.concatenate(savedX, 1)
 
-		else:
-			X = np.load(feature_dest+"/X-c"+next(iter(blocks))+".npy")
-
-		Y = np.load(feature_dest +"/Y.npy")
-		
-		if unnormalize:
-			X = np.sqrt(np.abs(X)) * np.sign(X)
 		kfold = StratifiedKFold(n_splits=ksplits, shuffle=True, random_state=555)
-		cvscores, splits = [],[]
 		trial = 0
+		premodel = []
+		for l in range(nb_DNN_deep_layers):
+			premodel.append(Dense(nb_DNN_neurons, activation='relu', name='fc'+str(l)))
+		premodel.append(Dense(len(labels_set), activation='softmax', name='predictions'))
+
 		for train, test in kfold.split(X, Y):
-			premodel = []
-			for l in range(nb_DNN_deep_layers):
-				premodel.append(Dense(nb_DNN_neurons, activation='relu', name='fc'+str(l)))
-			premodel.append(Dense(len(labels_set), activation='softmax', name='predictions'))
+
 			model = Sequential(premodel)
 
 			model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
@@ -258,7 +249,7 @@ if "T" in procedure:
 				# validation_steps = 1,
 				epochs = nb_epochs,
 				verbose = 0)
-			model.summary()
+			
 			yhat_classes = np.argmax(model.predict(X[test]),axis=1)
 			accscore = accuracy_score(Y[test], yhat_classes)
 			print(accscore)
@@ -272,6 +263,9 @@ if "T" in procedure:
 					best_score = accscore
 			trial += 1
 
+		print ("best iteration accuracy:", best_score)
+		print ("average accuracy:", sum(output_dict)/len(output_dict))
+
 		model_json = best_model.to_json()
 		with open(model_dest+"/DNNmodel.json", "w") as json_file:
 			json_file.write(model_json)
@@ -283,6 +277,7 @@ if "T" in procedure:
 
 
 if "C" in procedure:
+	print ("####### classification stage #######")
 
 	model = VGG16(weights='imagenet', include_top=False)
 
@@ -349,7 +344,7 @@ if "C" in procedure:
 		images = np.vstack([x])
 
 		extracted_features = model.predict(images)
-		if unnormalize:
+		if normalize:
 			for t in range(len(extracted_features)):
 				extracted_features[t] = np.sqrt(np.abs(extracted_features[t])) * np.sign(extracted_features[t])
 		if len(blocks) > 1:
