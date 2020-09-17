@@ -165,9 +165,11 @@ if "T" in procedure:
 
 	labels_set = set()
 	with open(feature_dest+"/classes.txt") as classes_handle:
-		for line in classes_handle:
-			line = line.strip().split()
-			labels_set.add(line[0])
+		with open(model_dest+"/classes.txt", "w") as f:
+			for line in classes_handle:
+				line = line.strip().split()
+				labels_set.add(line[0])
+				print(line[0], line[1], file=f)
 
 	if len(blocks) > 1:
 		savedX = []
@@ -293,7 +295,7 @@ if "C" in procedure:
 	model = Model(inputs=model.input, outputs=blocklist)
 
 	labels_dict = {}
-	with open(feature_dest+"/classes.txt") as classes_handle:
+	with open(model_dest+"/classes.txt") as classes_handle:
 		for line in classes_handle:
 			line = line.strip().split()
 			labels_dict[line[1]] = line[0]
@@ -324,7 +326,9 @@ if "C" in procedure:
 			features_to_predict = np.concatenate(extracted_features, 1)
 		else:
 			features_to_predict = extracted_features
-		features_to_predict = np.sqrt(np.abs(features_to_predict)) * np.sign(features_to_predict)
+
+		if normalize:
+			features_to_predict = np.sqrt(np.abs(features_to_predict)) * np.sign(features_to_predict)
 
 		if algorithm == "SVM":
 			predict_decision = clf.decision_function(features_to_predict[np.array([0])])
