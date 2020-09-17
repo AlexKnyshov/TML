@@ -209,6 +209,7 @@ if "T" in procedure:
 			clf.fit(X[train], Y[train])
 			y_pred = clf.predict(X[test])
 			acc = accuracy_score(Y[test],y_pred)
+			print(acc)
 			output_dict.append(acc)
 			if trial == 0:
 				best_model = clf
@@ -228,13 +229,14 @@ if "T" in procedure:
 
 		kfold = StratifiedKFold(n_splits=ksplits, shuffle=True, random_state=555)
 		trial = 0
-		premodel = []
-		for l in range(nb_DNN_deep_layers):
-			premodel.append(Dense(nb_DNN_neurons, activation='relu', name='fc'+str(l)))
-		premodel.append(Dense(len(labels_set), activation='softmax', name='predictions'))
 
 		for train, test in kfold.split(X, Y):
 
+			premodel = []
+			for l in range(nb_DNN_deep_layers):
+				premodel.append(Dense(nb_DNN_neurons, activation='relu', name='fc'+str(l)))
+			premodel.append(Dense(len(labels_set), activation='softmax', name='predictions'))
+			
 			model = Sequential(premodel)
 
 			model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
@@ -251,16 +253,16 @@ if "T" in procedure:
 				verbose = 0)
 			
 			yhat_classes = np.argmax(model.predict(X[test]),axis=1)
-			accscore = accuracy_score(Y[test], yhat_classes)
-			print(accscore)
-			output_dict.append(accscore)
+			acc = accuracy_score(Y[test], yhat_classes)
+			print(acc)
+			output_dict.append(acc)
 			if trial == 0:
 				best_model = model
-				best_score = accscore
+				best_score = acc
 			else:
-				if accscore > best_score:
+				if acc > best_score:
 					best_model = model
-					best_score = accscore
+					best_score = acc
 			trial += 1
 
 		print ("best iteration accuracy:", best_score)
