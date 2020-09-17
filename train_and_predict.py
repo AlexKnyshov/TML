@@ -2,13 +2,6 @@ import sys
 import os
 import numpy as np
 import argparse
-
-
-
-from keras.models import Sequential, Model
-from keras.preprocessing.image import ImageDataGenerator
-from keras.layers import GlobalAveragePooling2D, GlobalMaxPooling2D, Dense
-from keras.applications.vgg16 import VGG16
 import pickle
 
 
@@ -30,7 +23,7 @@ optional.add_argument('--batch', metavar='N', help='batch size',dest="batch_size
 optional.add_argument('--Nldnn', metavar='N', help='number of layers in the DNN, excluding the prediction layer, >=1',dest="nb_DNN_deep_layers", type=int, default=2)
 optional.add_argument('--Nndnn', metavar='N', help='number of neurons in the DNN layers, excluding the prediction layer, >=1',dest="nb_DNN_neurons", type=int, default=320)
 optional.add_argument('--Nepochs', metavar='N', help='number of epochs for DNN training',dest="nb_epochs", type=int, default=50)
-optional.add_argument('--no-norm', dest='normalize', action='store_false', help='do not normalize features', default=True)
+optional.add_argument('--no-norm', dest='unnormalize', action='store_true', help='do not normalize features', default=False)
 optional.add_argument('--Ksplits', metavar='N', help='number of cross-validation splits',dest="ksplits", type=int, default=10)
 
 
@@ -54,7 +47,7 @@ else:
 	batch_size = vars(args)["batch_size"]
 	nb_DNN_deep_layers = vars(args)["nb_DNN_deep_layers"]
 	nb_DNN_neurons = vars(args)["nb_DNN_neurons"]
-	normalize = vars(args)["normalize"]
+	unnormalize = vars(args)["unnormalize"]
 	ksplits = vars(args)["ksplits"]
 
 	blocks = set(vars(args)["blocks"].split(","))
@@ -72,19 +65,31 @@ else:
 			sys.exit()
 	if 'T' in procedure:
 		if feature_dest == None:
-			print ("procedure has T selected, please use -f to provide the folder with extracted features")
-			sys.exit()
+			if 'F' not in procedure:
+				print ("procedure has T selected, please use -f to provide the folder with extracted features")
+				sys.exit()
+			else:
+				print ("no folder for feature saving is provided, will use 'features' folder")
+				feature_dest = "features"
 		if model_dest == None:
 			print ("no folder for model saving is provided, will use 'models' folder")
 			model_dest = "models"
 	if 'C' in procedure:
 		if model_dest == None:
-			print ("procedure has C selected, please use -m to provide the folder with saved trained models")
-			sys.exit()
+			if 'T' not in procedure:
+				print ("procedure has C selected, please use -m to provide the folder with saved trained models")
+				sys.exit()
+			else:
+				print ("no folder for model saving is provided, will use 'models' folder")
+				model_dest = "models"
 		if folder_to_predict == None:
 			print ("procedure has C selected, please use -c to provide the folder with images to classify")
 			sys.exit()
 
+from keras.models import Sequential, Model
+from keras.preprocessing.image import ImageDataGenerator
+from keras.layers import GlobalAveragePooling2D, GlobalMaxPooling2D, Dense
+from keras.applications.vgg16 import VGG16
 
 
 def mkdirfunc(dir1):
@@ -183,7 +188,7 @@ if "T" in procedure:
 
 		Y = np.load(feature_dest +"/Y.npy")
 		
-		if normalize:
+		if unnormalize:
 			X = np.sqrt(np.abs(X)) * np.sign(X)
 
 		best_model = None
@@ -228,7 +233,7 @@ if "T" in procedure:
 
 		Y = np.load(feature_dest +"/Y.npy")
 		
-		if normalize:
+		if unnormalize:
 			X = np.sqrt(np.abs(X)) * np.sign(X)
 		kfold = StratifiedKFold(n_splits=ksplits, shuffle=True, random_state=555)
 		cvscores, splits = [],[]
@@ -343,7 +348,7 @@ if "C" in procedure:
 		images = np.vstack([x])
 
 		extracted_features = model.predict(images)
-		if normalize:
+		if unnormalize:
 			for t in range(len(extracted_features)):
 				extracted_features[t] = np.sqrt(np.abs(extracted_features[t])) * np.sign(extracted_features[t])
 		if len(blocks) > 1:
