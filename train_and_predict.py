@@ -51,9 +51,10 @@ else:
 	ksplits = vars(args)["ksplits"]
 
 	blocks = set(vars(args)["blocks"].split(","))
+	intblocks = [int(x) for x in blocks]
 
 	#check option validity:
-	if len(blocks) == 0 or min(blocks) < 1 or max(blocks) > 5:
+	if len(blocks) == 0 or min(intblocks) < 1 or max(intblocks) > 5:
 		print ("incorrect blocks entered: "+vars(args)["blocks"]+", please use one or comma separated group of numbers from 1 to 5")
 		sys.exit()
 	if img_height == 0 or img_width == 0:
