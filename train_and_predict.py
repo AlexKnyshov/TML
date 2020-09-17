@@ -105,35 +105,22 @@ if 'F' in procedure:
 	blocklist = []
 	blocknums = []
 
-	if "1" in blocks:
-		b1 = model.layers[-16].output 
-		b1 = GlobalAveragePooling2D()(b1)
-		blocklist.append(b1)
-		blocknums.append("1")
-
-	if "2" in blocks:
-		b2 = model.layers[-13].output
-		b2 = GlobalAveragePooling2D()(b2)
-		blocklist.append(b2)
-		blocknums.append("2")
-
-	if "3" in blocks:
-		b3 = model.layers[-9].output
-		b3 = GlobalAveragePooling2D()(b3)
-		blocklist.append(b3)
-		blocknums.append("3")
-
-	if "4" in blocks:
-		b4 = model.layers[-5].output
-		b4 = GlobalAveragePooling2D()(b4)
-		blocklist.append(b4)
-		blocknums.append("4")
-
-	if "5" in blocks:
-		b5 = model.layers[-1].output
-		b5 = GlobalAveragePooling2D()(b5)
-		blocklist.append(b5)
-		blocknums.append("5")
+	for bn in range(1,6):
+		bs = str(bn)
+		if bs in blocks:
+			if bs == "1":
+				bl = model.layers[-16].output 
+			elif bs == "2":
+				bl = model.layers[-13].output
+			elif bs == "3":
+				bl = model.layers[-9].output
+			elif bs == "4":
+				bl = model.layers[-5].output
+			elif bs == "5":
+				bl = model.layers[-1].output
+			bl = GlobalAveragePooling2D()(bl)
+			blocklist.append(bl)
+			blocknums.append(bs)
 
 	model = Model(inputs=model.input, outputs=blocklist)
 
@@ -184,8 +171,10 @@ if "T" in procedure:
 
 	if len(blocks) > 1:
 		savedX = []
-		for b in blocks:
-			savedX.append(np.load(feature_dest+"/X-c"+b+".npy"))
+		for bn in range(1,6):
+			bs = str(bn)
+			if bs in blocks:
+				savedX.append(np.load(feature_dest+"/X-c"+bs+".npy"))
 		X = np.concatenate(savedX, 1)
 
 	else:
@@ -229,14 +218,13 @@ if "T" in procedure:
 
 		kfold = StratifiedKFold(n_splits=ksplits, shuffle=True, random_state=555)
 		trial = 0
-
+		premodel = []
+		for l in range(nb_DNN_deep_layers):
+			premodel.append(Dense(nb_DNN_neurons, activation='relu', name='fc'+str(l)))
+		premodel.append(Dense(len(labels_set), activation='softmax', name='predictions'))
+		
 		for train, test in kfold.split(X, Y):
 
-			premodel = []
-			for l in range(nb_DNN_deep_layers):
-				premodel.append(Dense(nb_DNN_neurons, activation='relu', name='fc'+str(l)))
-			premodel.append(Dense(len(labels_set), activation='softmax', name='predictions'))
-			
 			model = Sequential(premodel)
 
 			model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
@@ -286,35 +274,21 @@ if "C" in procedure:
 	blocklist = []
 	blocknums = []
 
-	if "1" in blocks:
-		b1 = model.layers[-16].output 
-		b1 = GlobalAveragePooling2D()(b1)
-		blocklist.append(b1)
-		blocknums.append("1")
-
-	if "2" in blocks:
-		b2 = model.layers[-13].output
-		b2 = GlobalAveragePooling2D()(b2)
-		blocklist.append(b2)
-		blocknums.append("2")
-
-	if "3" in blocks:
-		b3 = model.layers[-9].output
-		b3 = GlobalAveragePooling2D()(b3)
-		blocklist.append(b3)
-		blocknums.append("3")
-
-	if "4" in blocks:
-		b4 = model.layers[-5].output
-		b4 = GlobalAveragePooling2D()(b4)
-		blocklist.append(b4)
-		blocknums.append("4")
-
-	if "5" in blocks:
-		b5 = model.layers[-1].output
-		b5 = GlobalAveragePooling2D()(b5)
-		blocklist.append(b5)
-		blocknums.append("5")
+	for bn in range(1,6):
+		if str(bn) in blocks:
+			if str(bn) == "1":
+				bl = model.layers[-16].output 
+			elif str(bn) == "2":
+				bl = model.layers[-13].output
+			elif str(bn) == "3":
+				bl = model.layers[-9].output
+			elif str(bn) == "4":
+				bl = model.layers[-5].output
+			elif str(bn) == "5":
+				bl = model.layers[-1].output
+			bl = GlobalAveragePooling2D()(bl)
+			blocklist.append(bl)
+			blocknums.append(str(bn))
 
 	model = Model(inputs=model.input, outputs=blocklist)
 
@@ -346,13 +320,11 @@ if "C" in procedure:
 		images = np.vstack([x])
 
 		extracted_features = model.predict(images)
-		if normalize:
-			for t in range(len(extracted_features)):
-				extracted_features[t] = np.sqrt(np.abs(extracted_features[t])) * np.sign(extracted_features[t])
 		if len(blocks) > 1:
 			features_to_predict = np.concatenate(extracted_features, 1)
 		else:
 			features_to_predict = extracted_features
+		features_to_predict = np.sqrt(np.abs(features_to_predict)) * np.sign(features_to_predict)
 
 		if algorithm == "SVM":
 			predict_decision = clf.decision_function(features_to_predict[np.array([0])])
