@@ -47,6 +47,8 @@ The results are saved in the `models` folder, the training accuracy is the `eval
 
 **If too much memory is used, reduce batch size (down to 1 for the worst possible scenario).**
 
+Run `python train_and_predict.py` to get the help on other options available.
+
 ## Only feature extraction and training
 
 The training images are to be organized as in the `full workflow` section. To run the feature extraction and training, run:
