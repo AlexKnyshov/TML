@@ -37,7 +37,7 @@ Lastly, download or clone the repository with the script, or copy the script fil
 The images used for training should be organized into a main folder with subfolders grouping images of the same class (taxon).
 **Supported image formats in Keras are: jpeg, png, bmp, gif.**
 The images to classify (unknown taxa to predict ID of, or a test dataset to check the accuracy) should be grouped all in one folder.
-Assuming Python 3 executable is called `python`, the main folder is called `training_images`, while the images to classify are located in `images_to_classify` folder, the command would be as follows:
+Assuming Python 3 executable is called `python`, the script is located in the working directory, the main folder is called `training_images`, while the images to classify are located in `images_to_classify` folder, the command would be as follows:
 
 ```
 python train_and_predict.py -t training_images -c images_to_classify
@@ -59,10 +59,10 @@ python train_and_predict.py -t training_images -p FT
 
 ## Only image classification, using the trained network
 
-For this stage only the model and the folder with images to classify are needed (no need for features folder, or the initial images used for training). To run the classifier, use the following command, assuming the images to classify are located in `images_to_classify` folder:
+For this stage only the model and the folder with images to classify are needed (no need for features folder, or the initial images used for training). To run the classifier, use the following command, assuming the images to classify are located in `images_to_classify` folder and the model files are stored in `models` folder:
 
 ```
-python train_and_predict.py -p C -c images_to_classify
+python train_and_predict.py -p C -c images_to_classify -m models
 ```
 
 Make sure you use exactly same settings (if not default) that were used for the feature extraction and training, e.g., SVM or DNN, resolutions, configuration of blocks...
