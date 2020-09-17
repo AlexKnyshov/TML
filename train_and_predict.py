@@ -160,7 +160,7 @@ if "T" in procedure:
 	from sklearn.metrics import accuracy_score
 	from sklearn.model_selection import StratifiedKFold
 	mkdirfunc(model_dest)
-	output_file = open(model_dest+"/evaluation_scores.csv", "w")
+	output_file = open(model_dest+"/evaluation_scores.txt", "w")
 	output_dict = []
 
 	labels_set = set()
@@ -190,26 +190,29 @@ if "T" in procedure:
 	if algorithm == "SVM":
 
 		from sklearn.svm import SVC, LinearSVC
+		import warnings
 
 		best_model = None
 		best_score = None
 		kfold = StratifiedKFold(n_splits=ksplits, shuffle=True, random_state=555)
 		trial = 0
 		for train, test in kfold.split(X, Y):
-			clf = LinearSVC(C=1.0, loss='squared_hinge', penalty='l2',multi_class='ovr', max_iter=10000)
-			clf.fit(X[train], Y[train])
-			y_pred = clf.predict(X[test])
-			acc = accuracy_score(Y[test],y_pred)
-			print(acc)
-			output_dict.append(acc)
-			if trial == 0:
-				best_model = clf
-				best_score = acc
-			else:
-				if acc > best_score:
+			with warnings.catch_warnings():
+				warnings.simplefilter("ignore")
+				clf = LinearSVC(C=1.0, loss='squared_hinge', penalty='l2',multi_class='ovr', max_iter=10000)
+				clf.fit(X[train], Y[train])
+				y_pred = clf.predict(X[test])
+				acc = accuracy_score(Y[test],y_pred)
+				print(acc)
+				output_dict.append(acc)
+				if trial == 0:
 					best_model = clf
 					best_score = acc
-			trial += 1
+				else:
+					if acc > best_score:
+						best_model = clf
+						best_score = acc
+				trial += 1
 		
 		print ("best iteration accuracy:", best_score)
 		print ("average accuracy:", sum(output_dict)/len(output_dict))
