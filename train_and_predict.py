@@ -59,8 +59,40 @@ else:
 
 	blocks = set(vars(args)["blocks"].split(","))
 
+	#check option validity:
+	if len(blocks) == 0 or min(blocks) < 1 or max(blocks) > 5:
+		print ("incorrect blocks entered: "+vars(args)["blocks"]+", please use one or comma separated group of numbers from 1 to 5")
+		sys.exit()
+	if img_height == 0 or img_width == 0:
+		print ("incorrect resolution entered: "+str(input_size)+", please use values greater than 0")
+		sys.exit()
+	if 'F' in procedure:
+		if folder_to_train == None:
+			print ("procedure has F selected, please use -t to provide the folder with training images")
+			sys.exit()
+	if 'T' in procedure:
+		if feature_dest == None:
+			print ("procedure has T selected, please use -f to provide the folder with extracted features")
+			sys.exit()
+		if model_dest == None:
+			print ("no folder for model saving is provided, will use 'models' folder")
+			model_dest = "models"
+	if 'C' in procedure:
+		if model_dest == None:
+			print ("procedure has C selected, please use -m to provide the folder with saved trained models")
+			sys.exit()
+		if folder_to_predict == None:
+			print ("procedure has C selected, please use -c to provide the folder with images to classify")
+			sys.exit()
+
+
+
+def mkdirfunc(dir1):
+	if not os.path.exists (dir1):
+		os.makedirs(dir1)
+
 #### GET FEATURES ####
-if procedure[0] == "F":
+if 'F' in procedure:
 
 	model = VGG16(weights='imagenet', include_top=False)
 
@@ -114,6 +146,7 @@ if procedure[0] == "F":
 	if len(blocklist) == 1:
 		X = [X]
 
+	mkdirfunc(feature_dest)
 	for n, i in enumerate(X):
 		with open(feature_dest+"/X-c"+str(blocknums[n])+".npy", 'wb') as f:
 			np.save(f, i)
@@ -131,36 +164,13 @@ if procedure[0] == "F":
 if "T" in procedure:
 	from sklearn.metrics import accuracy_score
 	from sklearn.model_selection import StratifiedKFold
+	mkdirfunc(model_dest)
 	output_file = open(model_dest+"/evaluation_scores.csv", "w")
 	output_dict = []
+
 	if algorithm == "SVM":
 
 		from sklearn.svm import SVC, LinearSVC
-
-		def classifier_training(X, Y, ksplits):
-			best_model = None
-			best_score = None
-			kfold = StratifiedKFold(n_splits=ksplits, shuffle=True, random_state=555)
-			cvscores, splits = [],[]
-			trial = 0
-			for train, test in kfold.split(X, Y):
-				clf = LinearSVC(C=1.0, loss='squared_hinge', penalty='l2',multi_class='ovr', max_iter=10000)
-				clf.fit(X[train], Y[train])
-				y_pred = clf.predict(X[test])
-				acc = accuracy_score(Y[test],y_pred)
-				cvscores.append(acc)
-				splits.append((Y[test], y_pred))
-				if trial == 0:
-					best_model = clf
-					best_score = acc
-				else:
-					if acc > best_score:
-						best_model = clf
-						best_score = acc
-				trial += 1
-			output_dict.append(cvscores)
-			print (best_score)
-			return best_model
 
 		if len(blocks) > 1:
 			savedX = []
@@ -176,8 +186,30 @@ if "T" in procedure:
 		if normalize:
 			X = np.sqrt(np.abs(X)) * np.sign(X)
 
-		trained_model = classifier_training(X, Y, ksplits)
-		pickle.dump(trained_model, open(model_dest+"/SVMmodel.bin", 'wb'))
+		best_model = None
+		best_score = None
+		kfold = StratifiedKFold(n_splits=ksplits, shuffle=True, random_state=555)
+		cvscores, splits = [],[]
+		trial = 0
+		for train, test in kfold.split(X, Y):
+			clf = LinearSVC(C=1.0, loss='squared_hinge', penalty='l2',multi_class='ovr', max_iter=10000)
+			clf.fit(X[train], Y[train])
+			y_pred = clf.predict(X[test])
+			acc = accuracy_score(Y[test],y_pred)
+			cvscores.append(acc)
+			splits.append((Y[test], y_pred))
+			if trial == 0:
+				best_model = clf
+				best_score = acc
+			else:
+				if acc > best_score:
+					best_model = clf
+					best_score = acc
+			trial += 1
+		output_dict.append(cvscores)
+		print (best_score)
+
+		pickle.dump(best_model, open(model_dest+"/SVMmodel.bin", 'wb'))
 	
 	elif algorithm == "DNN":
 		labels_set = set()
