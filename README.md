@@ -3,9 +3,9 @@
 ## Installation
 
 Python 3 with the following packages is required:
-* Tensorflow (tested with 2.1.0)
+* Tensorflow (tested with 2.0.0 and 2.1.0)
 * Keras (tested with 2.3.1)
-* scikit-learn (tested with 0.22.2.post1)
+* scikit-learn (tested with 0.22)
 
 <details>
 <summary>Installation instructions</summary>
@@ -19,19 +19,12 @@ For keras the command would be as follows:
 ```
 pip install --upgrade keras
 ```
-or
-```
-pip3 install --upgrade keras
-```
 
 For installing scikit-learn, use the same environment and `pip`, if possible, like so:
 ```
 pip install --upgrade scikit-learn
 ```
-or
-```
-pip3 install --upgrade scikit-learn
-```
+
 For more information on scikit-learn installation, consult this page https://scikit-learn.org/stable/install.html.
 
 Lastly, download or clone the repository with the script, or copy the script file from GitHub to your machine (`Code` button).
@@ -42,22 +35,24 @@ Lastly, download or clone the repository with the script, or copy the script fil
 ## Full workflow
 
 The images used for training should be organized into a main folder with subfolders grouping images of the same class (taxon).
-
+**Supported image formats in Keras are: jpeg, png, bmp, gif.**
 The images to classify (unknown taxa to predict ID of, or a test dataset to check the accuracy) should be grouped all in one folder.
-Assuming Python 3 executable is called `python3`, the main folder is called `training_images`, while the images to classify are located in `images_to_classify` folder, the command would be as follows:
+Assuming Python 3 executable is called `python`, the main folder is called `training_images`, while the images to classify are located in `images_to_classify` folder, the command would be as follows:
 
 ```
-python3 train_and_predict.py -t ./training_images/ -c ./images_to_classify/
+python train_and_predict.py -t training_images -c images_to_classify
 ```
 
 The results are saved in the `models` folder, the training accuracy is the `evaluation_scores.csv`, while the predictions of the images to classify are in the `predictions.csv`
+
+**If too much memory is used, reduce batch size (down to 1 for the worst possible scenario).**
 
 ## Only feature extraction and training
 
 The training images are to be organized as in the `full workflow` section. To run the feature extraction and training, run:
 
 ```
-python3 train_and_predict.py -t ./training_images/ -p FT
+python train_and_predict.py -t training_images -p FT
 ```
 
 ## Only image classification, using the trained network
@@ -65,7 +60,7 @@ python3 train_and_predict.py -t ./training_images/ -p FT
 For this stage only the model and the folder with images to classify are needed (no need for features folder, or the initial images used for training). To run the classifier, use the following command, assuming the images to classify are located in `images_to_classify` folder:
 
 ```
-python3 train_and_predict.py -p C -c ./images_to_classify/
+python train_and_predict.py -p C -c images_to_classify
 ```
 
 Make sure you use exactly same settings (if not default) that were used for the feature extraction and training, e.g., SVM or DNN, resolutions, configuration of blocks...
