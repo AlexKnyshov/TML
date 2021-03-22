@@ -2,7 +2,7 @@
 
 ## References
 
-*The script was published in:*
+**The script was published in:**
 Alexander Knyshov, Samantha Hoang, Christiane Weirauch, Pretrained Convolutional Neural Networks Perform Well in a Challenging Test Case: Identification of Plant Bugs (Hemiptera: Miridae) Using a Small Number of Training Images, Insect Systematics and Diversity, Volume 5, Issue 2, March 2021, 3, https://doi.org/10.1093/isd/ixab004
 
 The algorithm is in part based on:
