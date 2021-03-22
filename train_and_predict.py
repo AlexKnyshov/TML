@@ -63,25 +63,20 @@ else:
 		if folder_to_train == None:
 			print ("procedure has F selected, please use -t to provide the folder with training images")
 			sys.exit()
-	if 'T' in procedure:
 		if feature_dest == None:
-			if 'F' not in procedure:
-				print ("procedure has T selected, please use -f to provide the folder with extracted features")
-				sys.exit()
-			else:
-				print ("no folder for feature saving is provided, will use 'features' folder")
-				feature_dest = "features"
+			print ("no folder for feature saving is provided, will use 'features' folder")
+			feature_dest = "features"
+	if 'T' in procedure:
+		if feature_dest == None and 'F' not in procedure:
+			print ("procedure has T selected, please use -f to provide the folder with extracted features")
+			sys.exit()
 		if model_dest == None:
 			print ("no folder for model saving is provided, will use 'models' folder")
 			model_dest = "models"
 	if 'C' in procedure:
-		if model_dest == None:
-			if 'T' not in procedure:
-				print ("procedure has C selected, please use -m to provide the folder with saved trained models")
-				sys.exit()
-			else:
-				print ("no folder for model saving is provided, will use 'models' folder")
-				model_dest = "models"
+		if model_dest == None and 'T' not in procedure:
+			print ("procedure has C selected, please use -m to provide the folder with saved trained models")
+			sys.exit()
 		if folder_to_predict == None:
 			print ("procedure has C selected, please use -c to provide the folder with images to classify")
 			sys.exit()
