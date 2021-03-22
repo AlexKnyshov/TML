@@ -1,5 +1,13 @@
 # Taxonomic Machine Learning
 
+## References
+
+*The script was published in:*
+Alexander Knyshov, Samantha Hoang, Christiane Weirauch, Pretrained Convolutional Neural Networks Perform Well in a Challenging Test Case: Identification of Plant Bugs (Hemiptera: Miridae) Using a Small Number of Training Images, Insect Systematics and Diversity, Volume 5, Issue 2, March 2021, 3, https://doi.org/10.1093/isd/ixab004
+
+The algorithm is in part based on:
+Miroslav Valan, Karoly Makonyi, Atsuto Maki, Dominik Vondráček, Fredrik Ronquist, Automated Taxonomic Identification of Insects with Expert-Level Accuracy Using Effective Feature Transfer from Convolutional Networks, Systematic Biology, Volume 68, Issue 6, November 2019, Pages 876–895, https://doi.org/10.1093/sysbio/syz014
+
 ## Installation
 
 Python 3 with the following packages is required:
@@ -8,7 +16,7 @@ Python 3 with the following packages is required:
 * scikit-learn (tested with 0.22)
 
 <details>
-<summary>Installation instructions</summary>
+<summary><b>Installation instructions</b></summary>
 <p>
 
 Tensorflow website has great instructions on how to install python and its packages and how to set up and use virtual environments.
@@ -37,6 +45,33 @@ Lastly, download or clone the repository with the script, or copy the script fil
 The images used for training should be organized into a main folder with subfolders grouping images of the same class (taxon).
 **Supported image formats in Keras are: jpeg, png, bmp, gif.**
 The images to classify (unknown taxa to predict ID of, or a test dataset to check the accuracy) should be grouped all in one folder.
+```
+-- training_images
+      |
+      |-- taxon1
+      |    |
+      |    |-- image1
+      |    |-- image2
+      |    |-- image3
+      |
+      |-- taxon2
+      |    |
+      |    |-- image1
+      |    |-- image2
+      |    |-- image3
+      |
+      |-- taxon3
+           |
+           |-- image1
+           |-- image2
+           |-- image3
+
+-- images_to_classify
+      |
+      |-- image1
+      |-- image2
+      |-- image3
+```
 Assuming Python 3 executable is called `python`, the script is located in the working directory, the main folder is called `training_images`, while the images to classify are located in `images_to_classify` folder, the command would be as follows:
 
 ```
